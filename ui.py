@@ -1,15 +1,25 @@
 import streamlit as st
 from rag_pipeline import get_answer
 
-st.title("RAG Document Q&A")
+st.title("RAG-chain PDF chat")
 
-query = st.text_input("Ask a question about your documents:")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-if st.button("Get Answer"):
-    if query:
-        response = get_answer(query)
-        st.write("### Answer:")
-        st.write(response)
-    else:
-        st.warning("Please enter a question.")
+# add chat messages from history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.chat_input("Ask me anything about your document..."):
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    with st.chat_message("assistant"):
+        response = get_answer(prompt)
+        st.markdown(response)
+    
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
