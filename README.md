@@ -1,4 +1,4 @@
-# RAGchainPDF
+# RAG-chain PDF
 A preliminary, rudimentary effort to be able to ask an LLM questions about any PDF.
 
 Run the app with:

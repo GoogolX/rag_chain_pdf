@@ -1,5 +1,7 @@
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
 from .loader import load_and_split_pdf
 from .embeddings import get_embedding_model
 from .vector_db import create_vector_db
@@ -16,7 +18,7 @@ def create_qa_chain(pdf_path, chain_type="stuff", k=5, prompt=None):
     if len(chunks) == 0:
         raise ValueError("No chunks were created from the PDF")
     
-    # Add some debug logs
+    # adding some debug logs
     print("Getting embedding model...")
     embedding_model = get_embedding_model()
     print("Creating vector database...")
@@ -26,43 +28,39 @@ def create_qa_chain(pdf_path, chain_type="stuff", k=5, prompt=None):
     print("LLM loaded successfully")
 
     if prompt is None:
-        prompt_template = """Use the following pieces of context to answer the question. If you don't know the answer based on the context provided, just say that you don't know.
+        prompt_template = """You are a friendly and helpful assistant. Use the following pieces of context to answer the user's question in a conversational way. If you don't know the answer based on the context provided, be honest and say that you don't know, but try to be helpful by suggesting what information might be relevant.
 
 Context: {context}
+
+Current conversation:
+{chat_history}
+
 Question: {question}
 Answer: """
         prompt = PromptTemplate(
             template=prompt_template,
-            input_variables=["context", "question"]
+            input_variables=["context", "question", "chat_history"]
         )
 
-    chain_kwargs = {}
-    if prompt:
-        chain_kwargs["prompt"] = prompt
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        return_messages=True,
+        output_key='answer'
+    )
 
-    qa_chain = RetrievalQA.from_chain_type(
+    qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
         retriever=vector_db.as_retriever(search_kwargs={"k": k}),
-        chain_type=chain_type,
-        chain_type_kwargs=chain_kwargs,
+        memory=memory,
+        combine_docs_chain_kwargs={"prompt": prompt} if prompt else None,
         return_source_documents=False
     )
     return qa_chain
 
-# Initialize with Report.pdf
-pdf_path = "Report.pdf"
-qa_chain = create_qa_chain(pdf_path)
-
 def get_answer(query):
-    try:
-        # adding some debug logs
-        print(f"Processing query: {query}")
-        print("Invoking QA chain...")
-        result = qa_chain.invoke({"query": query})
-        print("Got response from QA chain")
-        return result["result"]
-    except Exception as e:
-        print(f"Error processing query: {str(e)}")
-        import traceback
-        print(f"Full error: {traceback.format_exc()}")
-        return f"Sorry, I encountered an error while processing your question: {str(e)}"
+    pdf_path = "Report.pdf"
+    if not hasattr(get_answer, 'qa_chain'):
+        get_answer.qa_chain = create_qa_chain(pdf_path)
+    
+    result = get_answer.qa_chain({"question": query})
+    return result['answer']
