@@ -3,3 +3,5 @@
 *dat
 *local*
 *pdf
+*pycache*
+*/*pycache*
