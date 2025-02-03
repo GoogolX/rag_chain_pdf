@@ -3,3 +3,26 @@
 *dat
 *local*
 *pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+.env
+
+# Model files
+*.gguf
+
+# Vector DB
+chroma_db/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+.DS_Store

@@ -1,9 +1,9 @@
 import streamlit as st
 from rag_pipeline import get_answer
 
-st.title("RAG Document Q&A")
+st.title("Document Q&A")
 
-query = st.text_input("Ask a question about your documents:")
+query = st.text_input("Ask a question about your document:")
 
 if st.button("Get Answer"):
     if query:
